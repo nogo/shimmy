@@ -1,6 +1,6 @@
 # Shimmy Vision — Production Readiness Checklist
 
-> Last audit: 2025-01-xx by Copilot  
+> Last audit: 2025-12-15 by Copilot  
 > Target: 95%+ production ready before private crate split
 
 ---
@@ -40,29 +40,161 @@
 
 ---
 
-## 🟡 HIGH PRIORITY — Should fix before release
-
-### 5. Private Crate Migration (source protection)
-**Status:** Not started  
-**Documented in:** `docs/VISION_PRIVATE_SPLIT_REPORT.md`
-
-**Steps:**
-1. Create private GitHub repo `shimmy-vision-private`
-2. Extract `src/vision.rs` and `src/vision_license.rs` (~2,073 lines total)
-3. Create public adapter trait `VisionProvider` in main repo
-4. Add optional git dependency in public `Cargo.toml`:
-   ```toml
-   [dependencies.shimmy-vision]
-   git = "git@github.com:yourorg/shimmy-vision-private.git"
-   optional = true
-   ```
-5. Set up CI with deploy key for private repo access
-6. Update feature flags: `vision = ["shimmy-vision"]`
-7. Test that `cargo build --features vision` fails without private repo access
+### 5. Private Repository Created
+**Status:** ✅ DONE  
+**What was done:**
+- Created `https://github.com/Michael-A-Kuykendall/shimmy-vision-private` (private)
+- Added proprietary LICENSE
+- Added closed CONTRIBUTING.md (no external contributions)
+- Added README.md with licensing info
+- Scaffold Cargo.toml with dependencies
+- Placeholder `src/lib.rs`, `src/vision.rs`, `src/license.rs`
 
 ---
 
-### 6. License Verification Before Model Download
+### 6. Contribution Policy Updated
+**Status:** ✅ DONE  
+**What was done:**
+- Updated shimmy `CONTRIBUTING.md` to "open source, not open contribution" model
+- Matches crabcamera's policy (PRs not accepted by default, email-first)
+
+---
+
+## 🔴 CRITICAL — Private Crate Migration Steps
+
+### Step 1: Copy Vision Code to Private Repo
+**Status:** NOT STARTED  
+**Files to copy:**
+- `src/vision.rs` → `shimmy-vision-private/src/vision.rs` (~1,399 lines)
+- `src/vision_license.rs` → `shimmy-vision-private/src/license.rs` (~674 lines)
+
+**Commands:**
+```bash
+# From shimmy-workspace
+cp src/vision.rs ../shimmy-vision-private/src/vision.rs
+cp src/vision_license.rs ../shimmy-vision-private/src/license.rs
+```
+
+---
+
+### Step 2: Update Private Crate Exports
+**Status:** NOT STARTED  
+**Edit `shimmy-vision-private/src/lib.rs`:**
+```rust
+mod license;
+mod vision;
+
+pub use license::*;
+pub use vision::*;
+```
+
+**Update `Cargo.toml` dependencies** to match what vision.rs needs.
+
+---
+
+### Step 3: Create Adapter Trait in Public Shimmy
+**Status:** NOT STARTED  
+**Create `src/vision_adapter.rs`:**
+- Define `VisionProvider` trait with `process_vision_request()` signature
+- Implement trait for `shimmy-vision` crate when feature enabled
+- Implement stub/error for when feature disabled
+
+---
+
+### Step 4: Update Public Cargo.toml
+**Status:** NOT STARTED  
+**Add to `Cargo.toml`:**
+```toml
+[dependencies.shimmy-vision]
+git = "https://github.com/Michael-A-Kuykendall/shimmy-vision-private.git"
+optional = true
+
+[features]
+vision = ["shimmy-vision"]
+```
+
+---
+
+### Step 5: Test Private Crate Integration
+**Status:** NOT STARTED  
+**Verify:**
+```bash
+# Should fail (no access to private repo for random users)
+cargo build --features vision
+
+# Should succeed (you have access)
+cargo build --features vision
+```
+
+---
+
+### Step 6: Scrub Git History
+**Status:** NOT STARTED  
+**CRITICAL: Do this AFTER migration is verified working**
+
+**Why:** Public shimmy repo contains full history of `src/vision.rs` and `src/vision_license.rs`. Anyone can `git log` or checkout old commits to see the proprietary code.
+
+**Commands (using git-filter-repo):**
+```bash
+# Install git-filter-repo if not present
+pip install git-filter-repo
+
+# Backup first!
+cd /c/Users/micha/repos
+cp -r shimmy-workspace shimmy-workspace-backup
+
+# Remove vision files from ALL history
+cd shimmy-workspace
+git filter-repo --path src/vision.rs --path src/vision_license.rs --invert-paths
+
+# Force push (DESTRUCTIVE - breaks anyone's existing clones)
+git push origin --force --all
+git push origin --force --tags
+```
+
+**Alternative (BFG Repo Cleaner):**
+```bash
+# Download bfg.jar from https://rtyley.github.io/bfg-repo-cleaner/
+java -jar bfg.jar --delete-files vision.rs --delete-files vision_license.rs
+git reflog expire --expire=now --all && git gc --prune=now --aggressive
+git push origin --force --all
+```
+
+**Post-scrub verification:**
+```bash
+# Should return nothing
+git log --all --full-history -- src/vision.rs
+git log --all --full-history -- src/vision_license.rs
+```
+
+---
+
+### Step 7: Set Up CI Deploy Key
+**Status:** NOT STARTED  
+**For GitHub Actions to access private repo:**
+
+1. Generate deploy key:
+   ```bash
+   ssh-keygen -t ed25519 -C "shimmy-ci-deploy-key" -f shimmy_deploy_key -N ""
+   ```
+
+2. Add public key to `shimmy-vision-private` repo:
+   - Settings → Deploy keys → Add deploy key
+   - Paste contents of `shimmy_deploy_key.pub`
+   - Enable "Allow write access" if needed
+
+3. Add private key to `shimmy` repo secrets:
+   - Settings → Secrets → Actions → New repository secret
+   - Name: `VISION_DEPLOY_KEY`
+   - Value: contents of `shimmy_deploy_key`
+
+4. Update CI workflow to use deploy key for `cargo build --features vision`
+
+---
+
+## 🟡 HIGH PRIORITY — Other Items
+
+### License Verification Before Model Download
 **Status:** UNVERIFIED — punch list item  
 **Requirement:** License check must happen BEFORE any HuggingFace model download begins.
 
@@ -70,7 +202,7 @@
 
 ---
 
-### 7. End-to-End Functional Test Script
+### End-to-End Functional Test Script
 **Status:** Missing  
 **From punch list:** "Add an end-to-end functional test script that starts `serve-vision-gpu` and runs 1 image + 1 URL request"
 
@@ -86,7 +218,7 @@
 
 ## 🟢 RECOMMENDED — Nice to have before release
 
-### 8. Resumable Model Downloads
+### Resumable Model Downloads
 **Status:** Not implemented  
 **Impact:** Better UX for interrupted downloads (~5.7GB total)
 
@@ -94,7 +226,7 @@
 
 ---
 
-### 9. HTTP Rate Limiting for Vision API
+### HTTP Rate Limiting for Vision API
 **Status:** Not implemented  
 **Impact:** Prevents abuse of `/api/vision` endpoint
 
@@ -102,7 +234,7 @@
 
 ---
 
-### 10. Structured Logging Fields
+### Structured Logging Fields
 **Status:** Partial  
 **From punch list:** "Add structured fields for: mode, image dimensions, duration, error category"
 
@@ -110,7 +242,7 @@
 
 ---
 
-### 11. Troubleshooting Documentation
+### Troubleshooting Documentation
 **Status:** Missing  
 **From punch list:** "Add troubleshooting section for: missing CUDA, missing Chromium, model checksum mismatch, and license validation failures"
 
@@ -147,36 +279,11 @@
 ### Clippy
 - [x] `cargo clippy --features llama,vision -- -D warnings` passes
 
----
-
-## Deterministic Execution Order
-
-Run these in order to reach production readiness:
-
-```bash
-# 1. Fix broken tests
-# Delete dev-mode-bypass tests from:
-#   - tests/vision_license_flow_tests.rs
-# 1. Tests already fixed (see section above)
-
-# 2. tasks.json already fixed (see section above)
-
-# 3. docs/vision-timings.md already fixed (see section above)
-
-# 4. Obsolete analysis file already deleted
-
-# 5. Run test suite
-cargo test --features llama,vision --lib -- vision
-
-# 6. Run clippy
-cargo clippy --features llama,vision -- -D warnings
-
-# 7. Verify license flow manually
-# Export SHIMMY_LICENSE_KEY=<your-test-key>
-# Run shimmy vision --image test.png --mode ocr
-
-# 8. Create private repo and extract vision code (separate workflow)
-```
+### Repository Setup
+- [x] Private repo created: `shimmy-vision-private`
+- [x] Proprietary LICENSE in private repo
+- [x] Closed CONTRIBUTING.md in private repo
+- [x] Public shimmy CONTRIBUTING.md updated to "open source, not open contribution"
 
 ---
 
@@ -189,8 +296,24 @@ cargo clippy --features llama,vision -- -D warnings
 | Tasks | `.vscode/tasks.json` | ✅ Fixed |
 | Docs | `docs/vision-timings.md` | ✅ Fixed |
 | Analysis | `VISION_LICENSE_TEST_COVERAGE_ANALYSIS.md` | ✅ Deleted |
+| Private repo | `shimmy-vision-private` | ✅ Created (scaffold only) |
 
 ---
 
-*Generated by production audit. All blocking items resolved.*
-*Remaining: Private crate migration (HIGH PRIORITY) and nice-to-have items.*
+## Quick Reference: Current State
+
+**Public repo (shimmy-workspace):**
+- Branch: `feature/shimmy-vision-phase1`
+- Vision code: Still in `src/vision.rs` and `src/vision_license.rs`
+- Status: Dev mode bypass removed, tests fixed, ready for extraction
+
+**Private repo (shimmy-vision-private):**
+- Location: `../shimmy-vision-private/` (sibling directory)
+- Remote: `https://github.com/Michael-A-Kuykendall/shimmy-vision-private.git`
+- Status: Scaffold only, waiting for code copy
+
+**Next action:** Copy vision code to private repo (Step 1 above)
+
+---
+
+*Generated by production audit. Updated 2025-12-15.*
