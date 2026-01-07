@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔒 **SECURITY** - Critical Security Update
+
+**🚨 STRIPE LIVE KEY EXPOSURE MITIGATED**
+- **REMOVED**: Compromised internal chat logs containing live Stripe secret key from git history
+- **ROTATED**: All Stripe API keys (test and live) have been cycled
+- **YANKED**: crates.io version 1.8.2 yanked due to potential key exposure
+- **SCANNED**: Repository scanned for additional secrets, TruffleHog security scanning implemented
+- **VERIFIED**: No sensitive data remains in public repository
+
+### 📦 **VERSION BUMP**
+- Bumped to v1.8.3 to replace compromised v1.8.2
+
 ## [1.8.1] - 2025-12-08
 
 ### 🐳 **DOCKER PUBLISHING INFRASTRUCTURE** - Container Registry Publishing Fixed
