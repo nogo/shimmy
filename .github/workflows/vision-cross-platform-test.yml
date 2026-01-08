@@ -14,7 +14,8 @@ on:
 
 jobs:
   test-vision-linux-cuda:
-    if: contains(github.event.inputs.test_platforms, 'linux-x86_64') || github.event_name != 'workflow_dispatch'
+    # Run if: not a manual dispatch, OR test_platforms contains linux-x86_64, OR test_platforms is empty (use default)
+    if: github.event_name != 'workflow_dispatch' || contains(github.event.inputs.test_platforms || 'linux-x86_64,linux-arm64,windows-x86_64', 'linux-x86_64')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +35,8 @@ jobs:
           path: test-results-linux-cuda.json
 
   test-vision-linux-arm64:
-    if: contains(github.event.inputs.test_platforms, 'linux-arm64') || github.event_name != 'workflow_dispatch'
+    # Run if: not a manual dispatch, OR test_platforms contains linux-arm64, OR test_platforms is empty (use default)
+    if: github.event_name != 'workflow_dispatch' || contains(github.event.inputs.test_platforms || 'linux-x86_64,linux-arm64,windows-x86_64', 'linux-arm64')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +56,8 @@ jobs:
           path: test-results-linux-arm64.json
 
   test-vision-windows:
-    if: contains(github.event.inputs.test_platforms, 'windows-x86_64') || github.event_name != 'workflow_dispatch'
+    # Run if: not a manual dispatch, OR test_platforms contains windows-x86_64, OR test_platforms is empty (use default)
+    if: github.event_name != 'workflow_dispatch' || contains(github.event.inputs.test_platforms || 'linux-x86_64,linux-arm64,windows-x86_64', 'windows-x86_64')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +74,8 @@ jobs:
           path: test-results-windows.json
 
   test-vision-macos-cross:
-    if: contains(github.event.inputs.test_platforms, 'macos') && !github.event.inputs.skip_macos
+    # Run if: test_platforms contains macos AND skip_macos is false
+    if: contains(github.event.inputs.test_platforms || '', 'macos') && github.event.inputs.skip_macos != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
