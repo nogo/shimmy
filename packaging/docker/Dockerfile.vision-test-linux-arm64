@@ -44,7 +44,7 @@ RUN cargo build --release --target aarch64-unknown-linux-gnu --features llama
 RUN pip3 install requests
 
 # Create test script
-RUN cat > /workspace/run_vision_tests.sh << 'EOF'
+RUN cat > /usr/local/bin/run_vision_tests.sh << 'EOF'
 #!/bin/bash
 set -e
 
@@ -72,7 +72,7 @@ python3 scripts/test_cross_compiled_vision.py \
 echo "✅ Vision tests completed for Linux ARM64"
 EOF
 
-RUN chmod +x /workspace/run_vision_tests.sh
+RUN chmod +x /usr/local/bin/run_vision_tests.sh
 
-# Default command
-CMD ["/workspace/run_vision_tests.sh"]
+# Default command  
+CMD ["/usr/local/bin/run_vision_tests.sh"]

@@ -36,31 +36,31 @@ RUN cargo build --release --features llama
 # Install Python test dependencies
 RUN pip3 install requests
 
-# Create test script
-RUN echo '#!/bin/bash' > /workspace/run_vision_tests.sh && \
-    echo 'set -e' >> /workspace/run_vision_tests.sh && \
-    echo '' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "🧪 Starting Vision Cross-Platform Tests"' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "Platform: Linux x86_64 (CUDA)"' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "================================="' >> /workspace/run_vision_tests.sh && \
-    echo '' >> /workspace/run_vision_tests.sh && \
-    echo '# Set test environment' >> /workspace/run_vision_tests.sh && \
-    echo 'export SHIMMY_VISION_MAX_LONG_EDGE=1024' >> /workspace/run_vision_tests.sh && \
-    echo 'export SHIMMY_VISION_MAX_PIXELS=2500000' >> /workspace/run_vision_tests.sh && \
-    echo 'export SHIMMY_VISION_AUTO_DOWNLOAD=1' >> /workspace/run_vision_tests.sh && \
-    echo '' >> /workspace/run_vision_tests.sh && \
-    echo '# Check CUDA availability' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "🔍 Checking CUDA..."' >> /workspace/run_vision_tests.sh && \
-    echo 'nvidia-smi || echo "⚠️ CUDA not available in container"' >> /workspace/run_vision_tests.sh && \
-    echo '' >> /workspace/run_vision_tests.sh && \
-    echo '# Run the cross-compiled basic test' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "🖼️ Running basic shimmy functionality tests..."' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "{"success": true, "platform": "linux-cuda", "tests": "basic-shimmy"}"' >> /workspace/run_vision_tests.sh && \
-    echo '    > /workspace/test-results-linux-cuda.json' >> /workspace/run_vision_tests.sh && \
-    echo '' >> /workspace/run_vision_tests.sh && \
-    echo 'echo "✅ Basic tests completed for Linux x86_64 (CUDA)"' >> /workspace/run_vision_tests.sh
+# Create test script in /usr/local/bin instead of workspace (to avoid volume mount override)
+RUN echo '#!/bin/bash' > /usr/local/bin/run_vision_tests.sh && \
+    echo 'set -e' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "🧪 Starting Vision Cross-Platform Tests"' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "Platform: Linux x86_64 (CUDA)"' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "================================="' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '# Set test environment' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'export SHIMMY_VISION_MAX_LONG_EDGE=1024' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'export SHIMMY_VISION_MAX_PIXELS=2500000' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'export SHIMMY_VISION_AUTO_DOWNLOAD=1' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '# Check CUDA availability' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "🔍 Checking CUDA..."' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'nvidia-smi || echo "⚠️ CUDA not available in container"' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '# Run the cross-compiled basic test' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "🖼️ Running basic shimmy functionality tests..."' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "{\\"success\\": true, \\"platform\\": \\"linux-cuda\\", \\"tests\\": \\"basic-shimmy\\"}"' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '    > /workspace/test-results-linux-cuda.json' >> /usr/local/bin/run_vision_tests.sh && \
+    echo '' >> /usr/local/bin/run_vision_tests.sh && \
+    echo 'echo "✅ Basic tests completed for Linux x86_64 (CUDA)"' >> /usr/local/bin/run_vision_tests.sh
 
-RUN chmod +x /workspace/run_vision_tests.sh
+RUN chmod +x /usr/local/bin/run_vision_tests.sh
 
 # Default command
-CMD ["/workspace/run_vision_tests.sh"]
+CMD ["/usr/local/bin/run_vision_tests.sh"]

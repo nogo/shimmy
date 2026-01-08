@@ -44,7 +44,7 @@ WORKDIR /workspace
 COPY . .
 
 # Create test script for macOS cross-compilation
-RUN cat > /workspace/run_vision_tests.sh << 'EOF'
+RUN cat > /usr/local/bin/run_vision_tests.sh << 'EOF'
 #!/bin/bash
 set -e
 
@@ -106,7 +106,7 @@ echo "⚠️ REMINDER: Manual testing required on actual macOS hardware"
 echo "   for Apple Silicon (MLX) and Intel (MLX/x86_64) platforms"
 EOF
 
-RUN chmod +x /workspace/run_vision_tests.sh
+RUN chmod +x /usr/local/bin/run_vision_tests.sh
 
 # Default command
-CMD ["/workspace/run_vision_tests.sh"]
+CMD ["/usr/local/bin/run_vision_tests.sh"]
