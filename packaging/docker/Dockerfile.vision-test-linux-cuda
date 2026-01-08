@@ -31,33 +31,31 @@ RUN cargo build --release --features llama,vision,llama-cuda
 RUN pip3 install requests
 
 # Create test script
-RUN cat > /workspace/run_vision_tests.sh << 'EOF'
-#!/bin/bash
-set -e
-
-echo "🧪 Starting Vision Cross-Platform Tests"
-echo "Platform: Linux x86_64 (CUDA)"
-echo "================================="
-
-# Set test environment
-export SHIMMY_VISION_MAX_LONG_EDGE=1024
-export SHIMMY_VISION_MAX_PIXELS=2500000
-export SHIMMY_VISION_AUTO_DOWNLOAD=1
-
-# Check CUDA availability
-echo "🔍 Checking CUDA..."
-nvidia-smi || echo "⚠️ CUDA not available in container"
-
-# Run the cross-compiled vision test
-echo "🖼️ Running vision functionality tests..."
-python3 scripts/test_cross_compiled_vision.py \
-    --binary ./target/release/shimmy \
-    --test-image assets/vision-samples/final-test.png \
-    --license "test-license-key" \
-    --output-report /workspace/test-results-linux-cuda.json
-
-echo "✅ Vision tests completed for Linux x86_64 (CUDA)"
-EOF
+RUN echo '#!/bin/bash' > /workspace/run_vision_tests.sh && \
+    echo 'set -e' >> /workspace/run_vision_tests.sh && \
+    echo '' >> /workspace/run_vision_tests.sh && \
+    echo 'echo "🧪 Starting Vision Cross-Platform Tests"' >> /workspace/run_vision_tests.sh && \
+    echo 'echo "Platform: Linux x86_64 (CUDA)"' >> /workspace/run_vision_tests.sh && \
+    echo 'echo "================================="' >> /workspace/run_vision_tests.sh && \
+    echo '' >> /workspace/run_vision_tests.sh && \
+    echo '# Set test environment' >> /workspace/run_vision_tests.sh && \
+    echo 'export SHIMMY_VISION_MAX_LONG_EDGE=1024' >> /workspace/run_vision_tests.sh && \
+    echo 'export SHIMMY_VISION_MAX_PIXELS=2500000' >> /workspace/run_vision_tests.sh && \
+    echo 'export SHIMMY_VISION_AUTO_DOWNLOAD=1' >> /workspace/run_vision_tests.sh && \
+    echo '' >> /workspace/run_vision_tests.sh && \
+    echo '# Check CUDA availability' >> /workspace/run_vision_tests.sh && \
+    echo 'echo "🔍 Checking CUDA..."' >> /workspace/run_vision_tests.sh && \
+    echo 'nvidia-smi || echo "⚠️ CUDA not available in container"' >> /workspace/run_vision_tests.sh && \
+    echo '' >> /workspace/run_vision_tests.sh && \
+    echo '# Run the cross-compiled vision test' >> /workspace/run_vision_tests.sh && \
+    echo 'echo "🖼️ Running vision functionality tests..."' >> /workspace/run_vision_tests.sh && \
+    echo 'python3 scripts/test_cross_compiled_vision.py \' >> /workspace/run_vision_tests.sh && \
+    echo '    --binary ./target/release/shimmy \' >> /workspace/run_vision_tests.sh && \
+    echo '    --test-image assets/vision-samples/final-test.png \' >> /workspace/run_vision_tests.sh && \
+    echo '    --license "test-license-key" \' >> /workspace/run_vision_tests.sh && \
+    echo '    --output-report /workspace/test-results-linux-cuda.json' >> /workspace/run_vision_tests.sh && \
+    echo '' >> /workspace/run_vision_tests.sh && \
+    echo 'echo "✅ Vision tests completed for Linux x86_64 (CUDA)"' >> /workspace/run_vision_tests.sh
 
 RUN chmod +x /workspace/run_vision_tests.sh
 
