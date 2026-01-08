@@ -33,8 +33,14 @@ WORKDIR /workspace
 # Copy source code
 COPY . .
 
-# Build with vision features for Windows
-RUN cargo build --release --target x86_64-pc-windows-msvc --features llama,vision,llama-vulkan
+# Remove private vision dependency for CI builds
+RUN sed -i '/shimmy-vision.*git.*shimmy-vision-private/d' Cargo.toml
+
+# Remove vision feature from features list
+RUN sed -i 's/vision = \[.*\]/vision = []/' Cargo.toml
+
+# Build with basic features for Windows (no vision due to private repo removal)
+RUN cargo build --release --target x86_64-pc-windows-msvc --features llama
 
 # Install Python test dependencies
 RUN pip3 install requests pypiwin32

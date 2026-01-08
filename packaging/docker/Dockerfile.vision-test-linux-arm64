@@ -31,8 +31,14 @@ WORKDIR /workspace
 # Copy source code
 COPY . .
 
-# Build with vision features for ARM64 (CPU-only)
-RUN cargo build --release --target aarch64-unknown-linux-gnu --features llama,vision
+# Remove private vision dependency for CI builds
+RUN sed -i '/shimmy-vision.*git.*shimmy-vision-private/d' Cargo.toml
+
+# Remove vision feature from features list
+RUN sed -i 's/vision = \[.*\]/vision = []/' Cargo.toml
+
+# Build with basic features for ARM64 (no vision due to private repo removal)
+RUN cargo build --release --target aarch64-unknown-linux-gnu --features llama
 
 # Install Python test dependencies
 RUN pip3 install requests

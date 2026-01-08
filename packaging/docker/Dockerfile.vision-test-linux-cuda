@@ -24,7 +24,13 @@ WORKDIR /workspace
 # Copy source code
 COPY . .
 
-# Build with basic features (no vision due to private repo access in CI)
+# Remove private vision dependency for CI builds
+RUN sed -i '/shimmy-vision.*git.*shimmy-vision-private/d' Cargo.toml
+
+# Remove vision feature from features list to avoid dependency issues
+RUN sed -i 's/vision = \[.*\]/vision = []/' Cargo.toml
+
+# Build with basic features (no vision due to private repo removal)
 RUN cargo build --release --features llama
 
 # Install Python test dependencies
