@@ -191,8 +191,7 @@ pub async fn chat_completions(
     let last_user_message = req
         .messages
         .iter()
-        .filter(|m| m.role == "user")
-        .next_back()
+        .rfind(|m| m.role == "user")
         .map(|m| m.content.as_str());
 
     // Build conversation history without the last user message
