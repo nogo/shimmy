@@ -305,7 +305,7 @@ impl ModelAutoDiscovery {
                     let group_key = format!("{}{}", base_name, extension);
                     shard_groups
                         .entry(group_key)
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(file_path.clone());
                     processed_files.insert(file_path.clone());
                 }

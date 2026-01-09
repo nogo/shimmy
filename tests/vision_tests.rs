@@ -14,7 +14,6 @@ mod vision_tests {
     use super::*;
     use base64::{engine::general_purpose, Engine as _};
     use image::{codecs::png::PngEncoder, ColorType, ImageEncoder};
-    use serde_json;
     use serial_test::serial;
     use std::collections::HashMap;
 

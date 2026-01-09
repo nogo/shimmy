@@ -569,6 +569,6 @@ mod vision_disabled_tests {
     fn test_vision_feature_disabled() {
         // When vision feature is disabled, these tests should not run
         println!("Vision feature disabled - integration tests skipped");
-        assert!(true);
+        // Test passes if we reach here without panicking
     }
 }
