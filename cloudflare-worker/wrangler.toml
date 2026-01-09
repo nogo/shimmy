@@ -9,6 +9,13 @@ name = "shimmy-license-webhook-test"
 BUY_ENDPOINT_ENABLED = "1"
 STRIPE_REQUIRE_CUSTOMER = "1"
 
+[env.production]
+name = "shimmy-license-webhook"
+
+[env.production.vars]
+BUY_ENDPOINT_ENABLED = "1"
+STRIPE_REQUIRE_CUSTOMER = "1"
+
 # Development settings
 [dev]
 port = 8787

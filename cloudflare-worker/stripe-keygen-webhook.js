@@ -51,6 +51,16 @@ export default {
       });
     }
 
+    // Portal endpoint (POST) - creates a customer portal session
+    if (url.pathname === '/portal' && request.method === 'POST') {
+      return handlePortal(url, request, env);
+    }
+
+    // License endpoint (POST) - retrieves license key for email
+    if (url.pathname === '/license' && request.method === 'POST') {
+      return handleLicense(url, request, env);
+    }
+
     // Webhook endpoint requires POST
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
@@ -484,7 +494,7 @@ async function createStripeCustomer(env, email) {
   const response = await fetch('https://api.stripe.com/v1/customers', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${btoa(env.STRIPE_SECRET_KEY + ':')}`,
+      'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body,
@@ -857,7 +867,7 @@ async function createStripeCheckoutSession(env, params) {
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${btoa(env.STRIPE_SECRET_KEY + ':')}`,
+      'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body,
@@ -925,4 +935,142 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/**
+ * Handle portal endpoint - creates a customer portal session
+ */
+async function handlePortal(url, request, env) {
+  try {
+    const formData = await request.formData();
+    const email = formData.get('email');
+
+    if (!email || !email.includes('@')) {
+      return new Response(JSON.stringify({ error: 'Valid email required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Find customer by email
+    const customer = await findStripeCustomerByEmail(env, email);
+    if (!customer) {
+      return new Response(JSON.stringify({ error: 'Customer not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Create portal session
+    const portalSession = await createStripePortalSession(env, customer.id, url.origin);
+
+    return new Response(JSON.stringify({ portal_url: portalSession.url }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Portal endpoint error:', error.message);
+    return new Response(JSON.stringify({ error: 'Unable to create portal session' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Handle license endpoint - retrieves license key for email
+ */
+async function handleLicense(url, request, env) {
+  try {
+    const formData = await request.formData();
+    const email = formData.get('email');
+
+    if (!email || !email.includes('@')) {
+      return new Response(JSON.stringify({ error: 'Valid email required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Find license by email
+    const license = await findLicenseByEmail(env, email);
+    if (!license) {
+      return new Response(JSON.stringify({ error: 'License not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify({ license_key: license.attributes.key }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('License endpoint error:', error.message);
+    return new Response(JSON.stringify({ error: 'Unable to retrieve license' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Find Stripe customer by email
+ */
+async function findStripeCustomerByEmail(env, email) {
+  const response = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}`, {
+    headers: {
+      'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Stripe API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data && data.data.length > 0 ? data.data[0] : null;
+}
+
+/**
+ * Create Stripe customer portal session
+ */
+async function createStripePortalSession(env, customerId, returnUrl) {
+  const response = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({
+      customer: customerId,
+      return_url: returnUrl
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Stripe portal session error: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Find license by email in Keygen
+ */
+async function findLicenseByEmail(env, email) {
+  const response = await fetch(`https://api.keygen.sh/v1/accounts/${env.KEYGEN_ACCOUNT_ID}/licenses?filter[email]=${encodeURIComponent(email)}&limit=1`, {
+    headers: {
+      'Authorization': `Bearer ${env.KEYGEN_ADMIN_TOKEN}`,
+      'Accept': 'application/vnd.api+json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Keygen API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data && data.data.length > 0 ? data.data[0] : null;
 }
