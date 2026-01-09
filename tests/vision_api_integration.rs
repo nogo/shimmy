@@ -34,7 +34,7 @@ mod vision_tests {
     };
     use std::collections::HashMap;
     use std::sync::Arc;
-    use tower::ServiceExt; // for oneshot
+    use tower::util::ServiceExt; // for oneshot
 
     /// Helper function to create test app state with vision licensing
     fn create_test_app_state() -> Arc<AppState> {
