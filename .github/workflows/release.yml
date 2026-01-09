@@ -202,68 +202,54 @@ jobs:
           name: gate-built-binary
           path: ./
 
-      - name: Upload as Linux x86_64 CPU artifact
+      - name: Upload as Linux x86_64 artifact (Kitchen Sink)
         uses: actions/upload-artifact@v4
         with:
-          name: shimmy-linux-x86_64-cpu
+          name: shimmy-linux-x86_64
           path: shimmy
 
-  # 🚀 CROSS-PLATFORM BUILDS (CPU + GPU VARIANTS)
-  # Note: Linux x86_64 CPU built in preflight gates, reused here
+  # 🚀 KITCHEN SINK BUILDS - All GPU backends in one binary per platform
+  # Auto-detection at runtime via --gpu-backend auto (default)
   build:
     needs: preflight
     if: needs.preflight.outputs.should_publish == 'true'
     strategy:
       matrix:
         include:
-          # Linux x86_64 - CUDA GPU
+          # Linux x86_64 - All GPU backends (CUDA + Vulkan + OpenCL)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary-name: shimmy
-            artifact-name: shimmy-linux-x86_64-cuda
-            features: huggingface,llama,llama-cuda,vision
+            artifact-name: shimmy-linux-x86_64
+            features: huggingface,llama,llama-cuda,llama-vulkan,llama-opencl,vision
 
-          # Linux ARM64 - CPU only
+          # Linux ARM64 - CPU only (GPU rare on ARM servers)
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             binary-name: shimmy
-            artifact-name: shimmy-linux-aarch64-cpu
+            artifact-name: shimmy-linux-aarch64
             features: huggingface,llama,vision
             use-cross: true
 
-          # Windows - CPU only
+          # Windows x64 - All GPU backends (CUDA + Vulkan + OpenCL)
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary-name: shimmy.exe
-            artifact-name: shimmy-windows-x86_64-cpu.exe
-            features: huggingface,llama,vision
+            artifact-name: shimmy-windows-x86_64.exe
+            features: huggingface,llama,llama-cuda,llama-vulkan,llama-opencl,vision
 
-          # Windows - Vulkan GPU
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary-name: shimmy.exe
-            artifact-name: shimmy-windows-x86_64-vulkan.exe
-            features: huggingface,llama,llama-vulkan,vision
-
-          # macOS Intel - CPU only
+          # macOS Intel - CPU only (MLX requires Apple Silicon)
           - os: macos-latest
             target: x86_64-apple-darwin
             binary-name: shimmy
-            artifact-name: shimmy-macos-intel-cpu
+            artifact-name: shimmy-macos-intel
             features: huggingface,llama,vision
 
-          # macOS ARM64 - CPU only
+          # macOS ARM64 - MLX GPU for Apple Silicon
           - os: macos-latest
             target: aarch64-apple-darwin
             binary-name: shimmy
-            artifact-name: shimmy-macos-arm64-cpu
-            features: huggingface,llama,vision
-
-          # macOS ARM64 - MLX GPU
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            binary-name: shimmy
-            artifact-name: shimmy-macos-arm64-mlx
+            artifact-name: shimmy-macos-arm64
             features: huggingface,llama,mlx,vision
 
     runs-on: ${{ matrix.os }}
@@ -298,7 +284,7 @@ jobs:
           CROSS_NO_WARNINGS: 1
           MACOSX_DEPLOYMENT_TARGET: "12.0"
         run: |
-          # Features defined in matrix for explicit CPU/GPU variants
+          # Kitchen Sink: Features defined in matrix (all GPU backends per platform)
           FEATURES="${{ matrix.features }}"
           
           echo "Building ${{ matrix.artifact-name }} with features: $FEATURES"
@@ -334,25 +320,22 @@ jobs:
         run: |
           mkdir -p release-files
 
-          # Linux x86_64 - CPU and CUDA variants
-          cp artifacts/shimmy-linux-x86_64-cpu/shimmy release-files/shimmy-linux-x86_64-cpu
-          cp artifacts/shimmy-linux-x86_64-cuda/shimmy release-files/shimmy-linux-x86_64-cuda
-          cp artifacts/shimmy-linux-x86_64-cpu/shimmy release-files/shimmy  # Generic = CPU
+          # Linux x86_64 - Kitchen Sink (all GPU backends)
+          cp artifacts/shimmy-linux-x86_64/shimmy release-files/shimmy-linux-x86_64
+          cp artifacts/shimmy-linux-x86_64/shimmy release-files/shimmy  # Generic = Linux x64
 
           # Linux ARM64 - CPU only
-          cp artifacts/shimmy-linux-aarch64-cpu/shimmy release-files/shimmy-linux-aarch64-cpu
+          cp artifacts/shimmy-linux-aarch64/shimmy release-files/shimmy-linux-aarch64
 
-          # Windows - CPU and Vulkan variants
-          cp artifacts/shimmy-windows-x86_64-cpu.exe/shimmy.exe release-files/shimmy-windows-x86_64-cpu.exe
-          cp artifacts/shimmy-windows-x86_64-vulkan.exe/shimmy.exe release-files/shimmy-windows-x86_64-vulkan.exe
-          cp artifacts/shimmy-windows-x86_64-cpu.exe/shimmy.exe release-files/shimmy.exe  # Generic = CPU
+          # Windows x64 - Kitchen Sink (all GPU backends)
+          cp artifacts/shimmy-windows-x86_64.exe/shimmy.exe release-files/shimmy-windows-x86_64.exe
+          cp artifacts/shimmy-windows-x86_64.exe/shimmy.exe release-files/shimmy.exe  # Generic = Windows
 
-          # macOS Intel - CPU only (MLX doesn't work on Intel)
-          cp artifacts/shimmy-macos-intel-cpu/shimmy release-files/shimmy-macos-intel-cpu
+          # macOS Intel - CPU only
+          cp artifacts/shimmy-macos-intel/shimmy release-files/shimmy-macos-intel
 
-          # macOS ARM64 - CPU and MLX variants
-          cp artifacts/shimmy-macos-arm64-cpu/shimmy release-files/shimmy-macos-arm64-cpu
-          cp artifacts/shimmy-macos-arm64-mlx/shimmy release-files/shimmy-macos-arm64-mlx
+          # macOS ARM64 - MLX GPU
+          cp artifacts/shimmy-macos-arm64/shimmy release-files/shimmy-macos-arm64
 
           # List what we're releasing
           echo "Release files:"
