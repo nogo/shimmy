@@ -19,8 +19,6 @@ jobs:
       should_publish: ${{ steps.gates.outputs.should_publish }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Configure Git for private dependencies
         run: |
@@ -257,10 +255,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CARGO_NET_GIT_FETCH_WITH_CLI: true
+      GGML_CUDA_NO_GIT_VER: "1"  # Disable git version check in llama.cpp CMake
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Configure Git for private dependencies
         run: |

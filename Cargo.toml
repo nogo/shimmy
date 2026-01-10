@@ -114,9 +114,3 @@ harness = false
 
 [workspace]
 
-# Patch for CI/CD: Use git version of shimmy-llama-cpp-sys-2 to preserve git metadata
-# This allows llama.cpp CMake scripts to run git commands for version info
-# Only used when building from source (not affecting published crate consumers)
-[patch.crates-io]
-shimmy-llama-cpp-sys-2 = { git = "https://github.com/edgenai/llama-cpp-rs", rev = "b4dda1f4d66eb87ff7ded08febe5c0220cc2deaa" }
-
