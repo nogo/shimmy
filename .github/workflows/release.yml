@@ -216,12 +216,13 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x86_64 - All GPU backends (CUDA + Vulkan + OpenCL)
+          # Linux x86_64 - CPU + Software GPU backends (Vulkan + OpenCL)
+          # NOTE: CUDA excluded - GitHub runners don't have CUDA toolkit
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary-name: shimmy
             artifact-name: shimmy-linux-x86_64
-            features: huggingface,llama,llama-cuda,llama-vulkan,llama-opencl,vision
+            features: huggingface,llama,llama-vulkan,llama-opencl,vision
 
           # Linux ARM64 - CPU only (GPU rare on ARM servers)
           - os: ubuntu-latest
@@ -231,12 +232,13 @@ jobs:
             features: huggingface,llama,vision
             use-cross: true
 
-          # Windows x64 - All GPU backends (CUDA + Vulkan + OpenCL)
+          # Windows x64 - CPU + Software GPU backends (Vulkan + OpenCL)
+          # NOTE: CUDA excluded - GitHub runners don't have CUDA toolkit
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary-name: shimmy.exe
             artifact-name: shimmy-windows-x86_64.exe
-            features: huggingface,llama,llama-cuda,llama-vulkan,llama-opencl,vision
+            features: huggingface,llama,llama-vulkan,llama-opencl,vision
 
           # macOS Intel - CPU only (MLX requires Apple Silicon)
           - os: macos-latest
